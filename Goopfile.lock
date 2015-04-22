@@ -1,1 +1,4 @@
+github.com/googollee/go-engine.io #597faf3df88a01780a5881fafbcbccd9d5c3fab0
+github.com/googollee/go-socket.io #31886c5636253259f3c028ee398e780d2b1d1696
+github.com/gorilla/websocket #ecff5aabe41f13b4cdf897e3c0c9bbccbe552a29
 github.com/mattn/go-sqlite3 #f136f0c8dcab5adb705d1d356685c33983b5210b
