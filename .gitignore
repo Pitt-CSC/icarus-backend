@@ -25,3 +25,6 @@ _testmain.go
 
 # Dependencies
 .vendor/
+
+# Binary
+icarus-backend
