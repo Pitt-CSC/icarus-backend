@@ -8,13 +8,14 @@ import (
 )
 
 func main() {
-	server, err := socketio.NewServer(nil)
+	io, err := socketio.NewServer(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	server.On("connection", func(so socketio.Socket) {
+	io.On("connection", func(so socketio.Socket) {
 		log.Println("on connection")
+		so.Emit("connection", nil)
 		so.Join("chat")
 		so.On("chat message", func(msg string) {
 			log.Println("emit:", so.Emit("chat message", msg))
@@ -22,14 +23,14 @@ func main() {
 		})
 	})
 
-	server.On("error", func(so socketio.Socket, err error) {
+	io.On("error", func(so socketio.Socket, err error) {
 		log.Println("error:", err)
 	})
 
 	http.HandleFunc("/socket.io/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
-		server.ServeHTTP(w, r)
+		io.ServeHTTP(w, r)
 	})
 	http.Handle("/", http.FileServer(http.Dir("./asset")))
 	log.Println("Serving at localhost:5000...")
