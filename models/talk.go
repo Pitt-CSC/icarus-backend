@@ -1,9 +1,16 @@
 // Package models provides ...
 package models
 
+import (
+	"time"
+)
+
 type Talk struct {
-	Id    string `json:"id"`
-	Title string `json:"title"`
+	ID        int        `json:"id"`
+	Title     string     `json:"title"`
+	CreatedAt time.Time  `json:"created-at"`
+	UpdatedAt time.Time  `json:"updated-at"`
+	DeletedAt *time.Time `json:"deleted-at,omitempty"`
 }
 
 type TalkResource struct {

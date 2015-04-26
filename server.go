@@ -2,9 +2,12 @@
 package main
 
 import (
-	. "github.com/Pitt-CSC/icarus-backend/routes"
+	"github.com/Pitt-CSC/icarus-backend/models"
+	"github.com/Pitt-CSC/icarus-backend/routes"
 	"github.com/googollee/go-socket.io"
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"net/http"
 )
@@ -12,9 +15,20 @@ import (
 func main() {
 
 	////
+	// Database Connection
+	//
+	// See migrate.go for migrations
+	////
+
+	db, err := gorm.Open("sqlite3", "tmp/gorm.db")
+	db.DB()
+
+	////
 	// Handle routing
 	////
 
+	routes.InitializeDBConnection(db)
+	models.InitializeDBConnection(db)
 	router := mux.NewRouter()
 	api := router.
 		PathPrefix("/api").
@@ -22,10 +36,17 @@ func main() {
 
 	// Talks
 	talks := api.Path("/talks").Subrouter()
-	talks.Methods("GET").HandlerFunc(TalkIndexRoute)
+	talks.Methods("GET").HandlerFunc(routes.TalkIndexRoute)
+	talks.Methods("POST").HandlerFunc(routes.TalkNewRoute)
 
 	talk := api.PathPrefix("/talks/{id}").Subrouter()
-	talk.Methods("GET").HandlerFunc(TalkShowRoute)
+	talk.Methods("GET").HandlerFunc(routes.TalkShowRoute)
+	talk.Methods("DELETE").HandlerFunc(routes.TalkDeleteRoute)
+
+	// Votes
+	//votes := api.Path("/votes").Subrouter()
+
+	//vote := api.PathPrefix("/votes/{id").Subrouter()
 
 	////
 	// Add socket.io
