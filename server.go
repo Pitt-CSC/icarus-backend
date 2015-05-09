@@ -2,6 +2,7 @@
 package main
 
 import (
+	"github.com/Pitt-CSC/icarus-backend/auth"
 	"github.com/Pitt-CSC/icarus-backend/models"
 	"github.com/Pitt-CSC/icarus-backend/routes"
 	"github.com/gorilla/mux"
@@ -35,6 +36,10 @@ func main() {
 	api := router.
 		PathPrefix("/api").
 		Subrouter()
+
+	// Authentiation
+	oauth := api.Path("/oauth").Subrouter()
+	oauth.Methods("GET").HandlerFunc(auth.LoginHandler)
 
 	// Talks
 	talks := api.Path("/talks").Subrouter()
