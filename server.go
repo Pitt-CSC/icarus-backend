@@ -39,7 +39,7 @@ func main() {
 
 	// Authentiation
 	oauth := api.Path("/oauth").Subrouter()
-	oauth.Methods("GET").HandlerFunc(auth.LoginHandler)
+	oauth.Methods("GET").HandlerFunc(auth.OAuthHandler)
 
 	// Talks
 	talks := api.Path("/talks").Subrouter()
