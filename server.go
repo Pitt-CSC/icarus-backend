@@ -30,8 +30,11 @@ func main() {
 	// Handle routing
 	////
 
+	// Database Connections for each package
 	routes.InitializeDBConnection(db)
 	models.InitializeDBConnection(db)
+	auth.InitializeDBConnection(db)
+
 	router := mux.NewRouter()
 	api := router.
 		PathPrefix("/api").

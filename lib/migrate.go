@@ -17,4 +17,5 @@ func main() {
 
 	// Run migrations
 	db.AutoMigrate(&Talk{})
+	db.AutoMigrate(&User{})
 }

@@ -3,11 +3,20 @@ package auth
 
 import (
 	"encoding/json"
+	"github.com/Pitt-CSC/icarus-backend/models"
+	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
+
+var db gorm.DB
+
+func InitializeDBConnection(dbconnection gorm.DB) {
+	db = dbconnection
+}
 
 type GithubAuthResponse struct {
 	AccessToken string `json:"access_token"`
@@ -16,9 +25,11 @@ type GithubAuthResponse struct {
 }
 
 type GithubUserResponse struct {
-	Id        int    `json:"id"`
+	ID        int    `json:"id"`
+	Name      string `json:"name"`
 	Login     string `json:"login"`
 	AvatarUrl string `json:"avatar_url"`
+	Email     string `json:"email"`
 }
 
 func OAuthHandler(w http.ResponseWriter, request *http.Request) {
@@ -28,7 +39,6 @@ func OAuthHandler(w http.ResponseWriter, request *http.Request) {
 
 	// Get code from request
 	code := request.FormValue("code")
-	log.Printf("Authentication code %s", code)
 
 	// Make POST request to Github's server to exchange code for auth token
 	var url = "https://github.com/login/oauth/access_token"
@@ -81,7 +91,39 @@ func OAuthHandler(w http.ResponseWriter, request *http.Request) {
 		// TODO: Do something to handle the error and return early, signifying that
 		//       the authentication was unucessessful
 	}
-	log.Printf("Github user name is: %s", githubUser.Login)
+
+	var user models.User
+	if err := db.Where(&models.User{GithubID: githubUser.ID}).First(&user).Error; err != nil {
+		// User needs to be created
+		createUser(githubUser)
+		db.Where(&models.User{GithubID: githubUser.ID}).First(&user)
+	}
+
+	log.Printf("User name is: %s %s", user.FirstName, user.LastName)
 
 	http.Redirect(w, request, "http://localhost:4200", 301)
+}
+
+func createUser(githubUser *GithubUserResponse) error {
+	// Process their name
+	nameArray := strings.Split(githubUser.Name, " ")
+	firstName := nameArray[0]
+	lastName := strings.Join(nameArray[1:len(nameArray)], " ")
+
+	// Create the user object
+	user := models.User{
+		GithubID:  githubUser.ID,
+		FirstName: firstName,
+		LastName:  lastName,
+		AvatarUrl: githubUser.AvatarUrl,
+		Email:     githubUser.Email,
+	}
+
+	if db.NewRecord(user) {
+		db.Create(&user)
+		log.Printf("User #%d created", user.ID)
+	}
+
+	return nil
+
 }

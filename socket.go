@@ -10,7 +10,7 @@ import (
 )
 
 type SocketMessage struct {
-	Id   int
+	ID   int
 	Type string
 	Body string
 }

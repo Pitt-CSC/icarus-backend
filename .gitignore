@@ -28,6 +28,7 @@ _testmain.go
 
 # Binary
 icarus-backend
+migrate
 
 # DB
 tmp/gorm.db

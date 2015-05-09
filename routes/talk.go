@@ -13,8 +13,6 @@ import (
 )
 
 func TalkIndexRoute(w http.ResponseWriter, r *http.Request) {
-	//talk1 := models.Talk{ID: 1, Title: "This is the first talk."}
-	//talk2 := models.Talk{ID: 2, Title: "This is the second talk."}
 	var talks []models.Talk
 	if err := db.Find(&talks).Error; err != nil {
 		w.WriteHeader(http.StatusNotFound)
@@ -47,7 +45,7 @@ func TalkNewRoute(w http.ResponseWriter, r *http.Request) {
 func TalkShowRoute(w http.ResponseWriter, r *http.Request) {
 	id, _ := strconv.Atoi(mux.Vars(r)["id"])
 	var talk models.Talk
-	if err := db.Where("id = ?", id).First(&talk).Error; err != nil {
+	if err := db.Where(&models.Talk{ID: id}).First(&talk).Error; err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
