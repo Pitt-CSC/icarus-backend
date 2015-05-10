@@ -4,6 +4,7 @@ package auth
 import (
 	"encoding/json"
 	"github.com/Pitt-CSC/icarus-backend/models"
+	"github.com/gorilla/securecookie"
 	"github.com/jinzhu/gorm"
 	"io/ioutil"
 	"log"
@@ -14,17 +15,21 @@ import (
 
 var db gorm.DB
 
+var cookieHandler = securecookie.New(
+	securecookie.GenerateRandomKey(64),
+	securecookie.GenerateRandomKey(32))
+
 func InitializeDBConnection(dbconnection gorm.DB) {
 	db = dbconnection
 }
 
-type GithubAuthResponse struct {
+type githubAuthResponse struct {
 	AccessToken string `json:"access_token"`
 	Scope       string `json:"scope"`
 	TokenType   string `json:"token_type"`
 }
 
-type GithubUserResponse struct {
+type githubUserResponse struct {
 	ID        int    `json:"id"`
 	Name      string `json:"name"`
 	Login     string `json:"login"`
@@ -65,7 +70,7 @@ func OAuthHandler(w http.ResponseWriter, request *http.Request) {
 		//       the authentication was unucessessful
 	}
 	resp.Body.Close()
-	auth := &GithubAuthResponse{}
+	auth := &githubAuthResponse{}
 	if err := json.Unmarshal(body, &auth); err != nil {
 		log.Print("There was an error using Unmarshal")
 	}
@@ -86,7 +91,7 @@ func OAuthHandler(w http.ResponseWriter, request *http.Request) {
 		//       the authentication was unucessessful
 	}
 	resp.Body.Close()
-	githubUser := &GithubUserResponse{}
+	githubUser := &githubUserResponse{}
 	if err := json.Unmarshal(body, &githubUser); err != nil {
 		// TODO: Do something to handle the error and return early, signifying that
 		//       the authentication was unucessessful
@@ -101,10 +106,33 @@ func OAuthHandler(w http.ResponseWriter, request *http.Request) {
 
 	log.Printf("User name is: %s %s", user.FirstName, user.LastName)
 
+	setSessionID(user.ID, w)
+
 	http.Redirect(w, request, "http://localhost:4200", 301)
 }
 
-func createUser(githubUser *GithubUserResponse) error {
+func GetAuthenticatedUser(request *http.Request) (models.User, error) {
+	var user models.User
+
+	// Get the decrypted ID from the cookie
+	id, err := getSessionID(request)
+	if err != nil {
+		return user, err
+	}
+
+	// Get the user from the decrypted ID
+	if err := db.Where(&models.User{ID: id}).First(&user).Error; err != nil {
+		log.Fatal(err)
+		return user, err
+	}
+	return user, nil
+}
+
+////
+// Utility Functions
+////
+
+func createUser(githubUser *githubUserResponse) error {
 	// Process their name
 	nameArray := strings.Split(githubUser.Name, " ")
 	firstName := nameArray[0]
@@ -125,5 +153,45 @@ func createUser(githubUser *GithubUserResponse) error {
 	}
 
 	return nil
+}
 
+func setSessionID(id int, w http.ResponseWriter) error {
+	value := map[string]int{
+		"id": id,
+	}
+	encoded, err := cookieHandler.Encode("auth-token", value)
+	if err != nil {
+		log.Printf("Could not encode ID %d into cookie", id)
+		return err
+	}
+	cookie := &http.Cookie{
+		Name:  "auth-token",
+		Value: encoded,
+		Path:  "/",
+	}
+	http.SetCookie(w, cookie)
+	return nil
+}
+
+func getSessionID(r *http.Request) (int, error) {
+	cookie, err := r.Cookie("auth-token")
+	if err != nil {
+		log.Print(err)
+		log.Print("Could not get cookie from request")
+		return 0, err
+	}
+	cookieValue := make(map[string]int)
+	if err := cookieHandler.Decode("auth-token", cookie.Value, &cookieValue); err != nil {
+		log.Print(err)
+		return 0, nil
+	}
+	return cookieValue["id"], nil
+}
+
+////
+// Error Handlers
+////
+
+func UnauthenticatedHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(404)
 }
