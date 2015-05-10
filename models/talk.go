@@ -13,6 +13,9 @@ type Talk struct {
 	CreatedAt time.Time  `json:"created-at"`
 	UpdatedAt time.Time  `json:"updated-at"`
 	DeletedAt *time.Time `json:"deleted-at,omitempty"`
+
+	User   User
+	UserID int `json:"user-id"` // FK
 }
 
 func (talk *Talk) BeforeCreate() (err error) {

@@ -14,9 +14,6 @@ func InitializeDBConnection(dbconnection gorm.DB) {
 }
 
 func sendJSON(w http.ResponseWriter, obj interface{}) {
-	w.Header().Set("Content-Type", "application/vnd.api+json")
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:4200")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	json.NewEncoder(w).Encode(obj)
 }
 
